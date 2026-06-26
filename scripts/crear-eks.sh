@@ -94,7 +94,7 @@ if [ -z "$NODE_EXISTS" ]; then
  aws eks create-nodegroup \
   --cluster-name $CLUSTER_NAME \
   --nodegroup-name $NODEGROUP_NAME \
-  --role-arn $LAB_ROLE_ARN \
+  --node-role-arn $LAB_ROLE_ARN \
   --subnets $SUBNETS \
   --scaling-config minSize=1,maxSize=3,desiredSize=1 \
   --instance-types t3.large \
