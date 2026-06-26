@@ -2,6 +2,7 @@
 set -e
 
 REGION="us-east-1"
+LAB_ROLE_ARN="arn:aws:iam::975049910382:role/LabRole"
 CLUSTER_NAME="tienda-perritos-eks"
 NODEGROUP_NAME="tienda-node-eks"
 
@@ -67,7 +68,7 @@ if [ -z "$STATUS" ]; then
  aws eks create-cluster \
   --name $CLUSTER_NAME \
   --region $REGION \
-  --role-arn arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/c215910a5457253l15425713t1w836319-LabEksClusterRole-xQqEEc06l0Sg \
+  --role-arn $LAB_ROLE_ARN \
   --resources-vpc-config subnetIds=$(echo $SUBNETS | tr ' ' ','),securityGroupIds=$SG_ID,endpointPublicAccess=true,endpointPrivateAccess=true
 
  echo "Esperando cluster ACTIVE..."
@@ -93,7 +94,7 @@ if [ -z "$NODE_EXISTS" ]; then
  aws eks create-nodegroup \
   --cluster-name $CLUSTER_NAME \
   --nodegroup-name $NODEGROUP_NAME \
-  --node-role arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/c215910a5457253l15425713t1w836319511-LabEksNodeRole-TdrIlZuTEIhP \
+  --role-arn $LAB_ROLE_ARN \
   --subnets $SUBNETS \
   --scaling-config minSize=1,maxSize=3,desiredSize=1 \
   --instance-types t3.large \
