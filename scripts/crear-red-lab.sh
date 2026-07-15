@@ -113,7 +113,7 @@ DATA_A=$(create_subnet "${PROJECT_NAME}-data-a" "10.0.4.0/24" "${REGION}a" false
 DATA_B=$(create_subnet "${PROJECT_NAME}-data-b" "10.0.5.0/24" "${REGION}b" false)
 
 #####################################
-# 4. NAT
+# 4. NAT (Validación dinámica y espera)
 #####################################
 echo "4. NAT Gateway..."
 
@@ -121,7 +121,7 @@ EIP_ALLOC=$(aws ec2 describe-addresses \
  --query "Addresses[?Tags[?Value=='${PROJECT_NAME}-nat-eip']].AllocationId" \
  --output text)
 
-if [ -z "$EIP_ALLOC" ]; then
+if [ -z "$EIP_ALLOC" ] || [ "$EIP_ALLOC" == "None" ]; then
   EIP_ALLOC=$(aws ec2 allocate-address \
     --domain vpc \
     --query "AllocationId" \
@@ -134,7 +134,7 @@ fi
 
 NAT_ID=$(aws ec2 describe-nat-gateways \
  --filter "Name=vpc-id,Values=$VPC_ID" \
- --query "NatGateways[0].NatGatewayId" \
+ --query "NatGateways[?State!='deleted'].NatGatewayId | [0]" \
  --output text)
 
 if [ "$NAT_ID" == "None" ] || [ -z "$NAT_ID" ]; then
@@ -145,7 +145,12 @@ if [ "$NAT_ID" == "None" ] || [ -z "$NAT_ID" ]; then
     --output text)
 fi
 
-echo "NAT: $NAT_ID"
+echo "NAT ID detectado/creado: $NAT_ID"
+
+# ESPERA CRÍTICA: Asegura que el NAT Gateway esté listo antes de continuar
+echo "Esperando que el NAT Gateway esté en estado disponible (puede tardar de 1 a 3 minutos)..."
+aws ec2 wait nat-gateway-available --nat-gateway-ids "$NAT_ID" --region "$REGION"
+echo "¡NAT Gateway listo y disponible!"
 
 #####################################
 # 5. ROUTE TABLE PUBLIC
@@ -162,13 +167,27 @@ aws ec2 create-route \
  --destination-cidr-block 0.0.0.0/0 \
  --gateway-id $IGW_ID || true
 
-aws ec2 associate-route-table \
- --subnet-id $PUB_A \
- --route-table-id $RT_PUBLIC || true
+# Función auxiliar para asociar de manera segura y evitar "AlreadyAssociated"
+safe_associate() {
+  SUBNET_ID=$1
+  ROUTE_TABLE_ID=$2
 
-aws ec2 associate-route-table \
- --subnet-id $PUB_B \
- --route-table-id $RT_PUBLIC || true
+  # Verifica si la subred ya tiene una asociación explícita (distinta de la principal por defecto)
+  EXISTING_ASSOC=$(aws ec2 describe-route-tables \
+    --filters "Name=association.subnet-id,Values=$SUBNET_ID" \
+    --query "RouteTables[0].RouteTableId" \
+    --output text)
+
+  if [ "$EXISTING_ASSOC" == "None" ] || [ -z "$EXISTING_ASSOC" ]; then
+    echo "Asociando subred $SUBNET_ID a la tabla $ROUTE_TABLE_ID..."
+    aws ec2 associate-route-table --subnet-id "$SUBNET_ID" --route-table-id "$ROUTE_TABLE_ID" > /dev/null
+  else
+    echo "La subred $SUBNET_ID ya está asociada a la tabla $EXISTING_ASSOC (Omitiendo para evitar conflictos)."
+  fi
+}
+
+safe_associate "$PUB_A" "$RT_PUBLIC"
+safe_associate "$PUB_B" "$RT_PUBLIC"
 
 #####################################
 # 6. ROUTE TABLE PRIVATE
@@ -180,6 +199,7 @@ RT_PRIVATE=$(aws ec2 create-route-table \
  --query 'RouteTable.RouteTableId' \
  --output text)
 
+# Ya no dará error, porque previamente esperamos a que el NAT_ID esté "available"
 aws ec2 create-route \
  --route-table-id $RT_PRIVATE \
  --destination-cidr-block 0.0.0.0/0 \
@@ -187,9 +207,7 @@ aws ec2 create-route \
 
 for subnet in $APP_A $APP_B $DATA_A $DATA_B
 do
- aws ec2 associate-route-table \
-   --subnet-id $subnet \
-   --route-table-id $RT_PRIVATE || true
+ safe_associate "$subnet" "$RT_PRIVATE"
 done
 
 #####################################
@@ -204,7 +222,7 @@ aws ec2 create-vpc-endpoint \
  || true
 
 echo "====================================="
-echo "INFRA CREADA"
+echo "INFRA CREADA EXITOSAMENTE"
 echo "====================================="
 echo "VPC: $VPC_ID"
 echo "Publicas: $PUB_A / $PUB_B"
