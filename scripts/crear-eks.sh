@@ -2,8 +2,8 @@
 set -e
 
 REGION="us-east-1"
-CLUSTER_ROLE_ARN="arn:aws:iam::572446332677:role/c205895a5248058l14425248t1w572446-LabEksClusterRole-WgvLNdUhkKIw"
-NODE_ROLE_ARN="arn:aws:iam::572446332677:role/c205895a5248058l14425248t1w572446910-LabEksNodeRole-uBJnM2ZLpFwW"
+CLUSTER_ROLE_ARN="arn:aws:iam::572446332677:role/LabRole"
+NODE_ROLE_ARN="arn:aws:iam::572446332677:role/LabRole"
 CLUSTER_NAME="tienda-perritos-eks"
 NODEGROUP_NAME="tienda-node-eks"
 
