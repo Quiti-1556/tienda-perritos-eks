@@ -36,6 +36,6 @@ Este pipeline automatiza la construcción de imágenes de Docker, su envío (pus
 Para desplegar este proyecto tú mismo, necesitarás una cuenta de AWS y configurar los secretos de GitHub necesarios (por ejemplo, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, EKS_CLUSTER_NAME).
   
 ## Integrantes:
-Brayan  Quitian
-Alberto Zegers
-Aron Acevedo
+Brayan  Quitian  
+Alberto Zegers  
+Aron Acevedo  
