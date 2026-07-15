@@ -23,12 +23,12 @@ NODE_ROLE_ARN=$(aws iam list-roles \
 # Validación por si el laboratorio usa el rol estándar de AWS Academy "LabRole"
 if [ -z "$CLUSTER_ROLE_ARN" ] || [ "$CLUSTER_ROLE_ARN" == "None" ] || [ "$CLUSTER_ROLE_ARN" == "" ]; then
   echo "⚠️ No se encontró un rol específico de EKS Cluster. Usando LabRole de respaldo..."
-  CLUSTER_ROLE_ARN="arn:aws:iam::572446332677:role/LabRole"
+  CLUSTER_ROLE_ARN="arn:aws:iam::817495613744:role/LabRole"
 fi
 
 if [ -z "$NODE_ROLE_ARN" ] || [ "$NODE_ROLE_ARN" == "None" ] || [ "$NODE_ROLE_ARN" == "" ]; then
   echo "⚠️ No se encontró un rol específico de EKS Node. Usando LabRole de respaldo..."
-  NODE_ROLE_ARN="arn:aws:iam::572446332677:role/LabRole"
+  NODE_ROLE_ARN="arn:aws:iam::817495613744:role/LabRole"
 fi
 
 echo "-> CLUSTER_ROLE_ARN: $CLUSTER_ROLE_ARN"
