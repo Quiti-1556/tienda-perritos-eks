@@ -9,9 +9,12 @@ metadata:
     # Forzamos que sea público y (no interno)
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: tienda-frontend
   ports:
     - port: 80
       targetPort: 80
+      nodePort: 31197
+  selector:
+    app: tienda-frontend
